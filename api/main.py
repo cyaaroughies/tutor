@@ -172,23 +172,24 @@ async def create_checkout_session(request: Request):
     except Exception:
         pass
 
-    plan = str(data.get("plan") or "").strip().lower()
-    pm = stripe_prices()
-    price_id = pm.get(plan, "")
+pm = stripe_prices()
+price_id = pm.get(plan, "")
 
-    if not price_id or not price_id.startswith("price_"):
-        raise HTTPException(status_code=400, detail="Invalid plan or missing Stripe price ID for this plan.")
+if plan not in pm:
+    raise HTTPException(status_code=400, detail=f"Invalid plan '{plan}'. Use: pro, semi_pro, yearly_pro.")
 
-    stripe.api_key = env("STRIPE_SECRET_KEY")
-    base = get_app_base(request)
+if not price_id:
+    raise HTTPException(
+        status_code=400,
+        detail=f"Missing Stripe Price ID for plan '{plan}'. Set env var STRIPE_PRICE_{plan.upper()} (must start with price_)."
+    )
 
-    try:
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            line_items=[{"price": price_id, "quantity": 1}],
-            success_url=f"{base}/?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{base}/?checkout=cancel",
-        )
+if not price_id.startswith("price_"):
+    raise HTTPException(
+        status_code=400,
+        detail=f"Invalid Stripe Price ID for '{plan}': '{price_id}'. It must start with price_."
+    )
+
         return {"url": session.url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
