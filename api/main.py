@@ -75,18 +75,34 @@ def health():
         "public_dir": str(PUBLIC_DIR),
     }
 
-
 @app.get("/stripe-debug")
-@app.get("/api/stripe-debug")
 def stripe_debug():
-    pm = stripe_prices()
+    def masked(v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            return ""
+        if len(v) <= 10:
+            return v
+        return v[:6] + "…" + v[-4:]
+
+    pro = env("STRIPE_PRICE_PRO")
+    semi = env("STRIPE_PRICE_SEMI_PRO")
+    yearly = env("STRIPE_PRICE_YEARLY_PRO")
+
     return {
         "stripe_imported": bool(stripe),
         "has_secret": bool(env("STRIPE_SECRET_KEY")),
-        "prices": pm,
         "app_base_url": env("APP_BASE_URL"),
-    }
-
+        "price_ids": {
+            "pro": masked(pro),
+            "semi_pro": masked(semi),
+            "yearly_pro": masked(yearly),
+        },
+        "validity": {
+            "pro": pro.startswith("price_"),
+            "semi_pro": semi.startswith("price_"),
+            "yearly_pro": yearly.startswith("price_"),
+        },
 
 # ----------------------------
 # ASSET: Dr. Botonic avatar
