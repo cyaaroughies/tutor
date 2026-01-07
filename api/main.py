@@ -112,3 +112,6 @@ async def create_checkout_session(req: Request):
 PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
 if PUBLIC_DIR.exists():
     app.mount("/", StaticFiles(directory=str(PUBLIC_DIR), html=True), name="public")
+
+
+
