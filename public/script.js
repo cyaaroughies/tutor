@@ -1,5 +1,3 @@
-fetch("/create-checkout-session", ...)
-
 const chatEl = document.getElementById("chat");
 const inputEl = document.getElementById("input");
 const sendBtn = document.getElementById("send");
@@ -44,13 +42,20 @@ async function send() {
       body: JSON.stringify({ messages })
     });
 
-    const data = await r.json();
-    if (!r.ok) throw new Error(data?.detail || "Request failed");
+    const raw = await r.text();               // <- don’t assume JSON
+    let data = {};
+    try { data = JSON.parse(raw || "{}"); } catch {}
 
-    addBubble("assistant", data.reply || "(no reply)");
-    messages.push({ role: "assistant", content: data.reply || "" });
+    if (!r.ok) {
+      const detail = data.detail || raw || `HTTP ${r.status}`;
+      throw new Error(detail);
+    }
+
+    const reply = data.reply || "(no reply)";
+    addBubble("assistant", reply);
+    messages.push({ role: "assistant", content: reply });
   } catch (e) {
-    addBubble("assistant", `Error: ${e.message}`);
+    addBubble("assistant", `Error: ${e.message || e}`);
   } finally {
     sendBtn.disabled = false;
     inputEl.focus();
