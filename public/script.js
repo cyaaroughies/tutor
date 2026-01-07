@@ -1,4 +1,4 @@
-fetch("/api/create-checkout-session", ...)
+fetch("/create-checkout-session", ...)
 
 const chatEl = document.getElementById("chat");
 const inputEl = document.getElementById("input");
@@ -19,7 +19,7 @@ function addBubble(role, text) {
 
 async function healthCheck() {
   try {
-    const r = await fetch("/api/health");
+    const r = await fetch("/health", { cache: "no-store" });
     const j = await r.json();
     statusEl.textContent = j.status === "ok" ? "Online" : "Degraded";
   } catch {
@@ -38,7 +38,7 @@ async function send() {
   sendBtn.disabled = true;
 
   try {
-    const r = await fetch("/api/chat", {
+    const r = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages })
