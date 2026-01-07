@@ -1,7 +1,12 @@
+# -*- coding: utf-8 -*-
 import os
 from typing import List, Literal, Optional
+from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+import stripe
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 try:
@@ -11,7 +16,17 @@ except Exception:
 
 app = FastAPI()
 
+# ----------------------------
+# Static site (public/)
+# ----------------------------
+PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
+if PUBLIC_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(PUBLIC_DIR), html=True), name="public")
 
+
+# ----------------------------
+# Models
+# ----------------------------
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
     content: str
@@ -22,12 +37,21 @@ class ChatRequest(BaseModel):
     model: Optional[str] = None
 
 
-@app.get("/api/health")
+# ----------------------------
+# Health
+# NOTE: Because vercel.json routes /api/* to this file,
+# these endpoints should NOT include "/api" here.
+# They will be reachable at /api/health, /api/chat, etc.
+# ----------------------------
+@app.get("/health")
 async def health():
     return {"status": "ok"}
 
 
-@app.post("/api/chat")
+# ----------------------------
+# Chat
+# ----------------------------
+@app.post("/chat")
 async def chat(payload: ChatRequest):
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -53,3 +77,51 @@ async def chat(payload: ChatRequest):
         return {"reply": reply, "model": model}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+
+# ----------------------------
+# Stripe Checkout (Subscription)
+# Frontend should POST JSON: {"plan":"basic"} or {"plan":"pro"}
+# ENV REQUIRED:
+#   STRIPE_SECRET_KEY
+#   STRIPE_PRICE_BASIC
+#   STRIPE_PRICE_PRO
+#   APP_BASE_URL (recommended)
+# ----------------------------
+@app.post("/create-checkout-session")
+async def create_checkout_session(req: Request):
+    body = await req.json()
+    plan = (body.get("plan") or "").strip().lower()
+    if not plan:
+        raise HTTPException(status_code=400, detail="Missing plan")
+
+    stripe_secret = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    if not stripe_secret:
+        raise HTTPException(status_code=500, detail="Missing STRIPE_SECRET_KEY")
+
+    price_map = {
+        "basic": os.getenv("STRIPE_PRICE_BASIC", "").strip(),
+        "pro": os.getenv("STRIPE_PRICE_PRO", "").strip(),
+    }
+    price_id = price_map.get(plan, "")
+
+    if not price_id or not price_id.startswith("price_"):
+        raise HTTPException(status_code=400, detail="Invalid plan or missing Stripe price ID for this plan.")
+
+    stripe.api_key = stripe_secret
+
+    app_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    if not app_base:
+        # Fallback; better to set APP_BASE_URL in Vercel
+        app_base = "https://botnology101.com"
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=f"{app_base}/dashboard.html?checkout=success",
+            cancel_url=f"{app_base}/pricing.html?checkout=cancel",
+        )
+        return {"url": session.url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
