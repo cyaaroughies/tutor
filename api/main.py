@@ -5,7 +5,6 @@ from pathlib import Path
 
 import stripe
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -17,41 +16,29 @@ except Exception:
 app = FastAPI()
 
 # ----------------------------
-# Static site (public/)
-# ----------------------------
-PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
-if PUBLIC_DIR.exists():
-    app.mount("/", StaticFiles(directory=str(PUBLIC_DIR), html=True), name="public")
-
-
-# ----------------------------
 # Models
 # ----------------------------
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
     content: str
 
-
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     model: Optional[str] = None
 
-
 # ----------------------------
-# Health
-# NOTE: Because vercel.json routes /api/* to this file,
-# these endpoints should NOT include "/api" here.
-# They will be reachable at /api/health, /api/chat, etc.
+# Health (support both paths)
 # ----------------------------
 @app.get("/health")
+@app.get("/api/health")
 async def health():
     return {"status": "ok"}
 
-
 # ----------------------------
-# Chat
+# Chat (support both paths)
 # ----------------------------
 @app.post("/chat")
+@app.post("/api/chat")
 async def chat(payload: ChatRequest):
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -78,17 +65,11 @@ async def chat(payload: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
 
-
 # ----------------------------
-# Stripe Checkout (Subscription)
-# Frontend should POST JSON: {"plan":"basic"} or {"plan":"pro"}
-# ENV REQUIRED:
-#   STRIPE_SECRET_KEY
-#   STRIPE_PRICE_BASIC
-#   STRIPE_PRICE_PRO
-#   APP_BASE_URL (recommended)
+# Stripe Checkout (support both paths)
 # ----------------------------
 @app.post("/create-checkout-session")
+@app.post("/api/create-checkout-session")
 async def create_checkout_session(req: Request):
     body = await req.json()
     plan = (body.get("plan") or "").strip().lower()
@@ -112,7 +93,6 @@ async def create_checkout_session(req: Request):
 
     app_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
     if not app_base:
-        # Fallback; better to set APP_BASE_URL in Vercel
         app_base = "https://botnology101.com"
 
     try:
@@ -125,3 +105,10 @@ async def create_checkout_session(req: Request):
         return {"url": session.url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ----------------------------
+# Static site (mount LAST so it can't hijack /api/*)
+# ----------------------------
+PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
+if PUBLIC_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(PUBLIC_DIR), html=True), name="public")
