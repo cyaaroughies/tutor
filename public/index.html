@@ -5,21 +5,212 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Botnology 101</title>
   <style>
-    body{font-family:Arial,system-ui;background:#0f1f17;color:#e6f2ec;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}
-    .box{padding:28px 34px;border:1px solid rgba(230,242,236,.15);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center}
-    h1{margin:0 0 10px;font-size:34px;letter-spacing:.5px}
-    p{margin:0;opacity:.9}
-    a{color:#bfe6d0;text-decoration:none;border-bottom:1px solid rgba(191,230,208,.4)}
-    a:hover{border-bottom-color:rgba(191,230,208,.9)}
+    :root{
+      --bg:#0f1f17;
+      --card:rgba(255,255,255,.04);
+      --line:rgba(230,242,236,.14);
+      --text:#e6f2ec;
+      --muted:rgba(230,242,236,.75);
+      --accent:#bfe6d0;
+      --shadow:0 18px 45px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:Arial,system-ui;
+      background:var(--bg);
+      color:var(--text);
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+    .wrap{width:min(980px,100%)}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .top{
+      display:flex;
+      gap:18px;
+      padding:22px;
+      align-items:center;
+      border-bottom:1px solid var(--line);
+    }
+    .avatar{
+      width:82px;height:82px;border-radius:50%;
+      border:1px solid rgba(230,242,236,.22);
+      background:rgba(191,230,208,.08);
+      overflow:hidden;
+      flex:0 0 auto;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .avatar img{
+      width:100%;height:100%;object-fit:cover;display:block;
+    }
+    .title h1{margin:0;font-size:28px;letter-spacing:.4px}
+    .title p{margin:6px 0 0;color:var(--muted);line-height:1.35}
+    .grid{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:16px;
+      padding:18px 22px 22px;
+    }
+    @media (max-width:820px){
+      .grid{grid-template-columns:1fr}
+      .top{align-items:flex-start}
+      .avatar{width:70px;height:70px}
+      .title h1{font-size:24px}
+    }
+    .panel{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      background:rgba(0,0,0,.10);
+    }
+    .panel h2{margin:0 0 10px;font-size:16px;letter-spacing:.35px}
+    .panel p{margin:0;color:var(--muted);line-height:1.45}
+    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+    button, .linkbtn{
+      appearance:none;
+      border:1px solid rgba(191,230,208,.35);
+      background:rgba(191,230,208,.10);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+      letter-spacing:.2px;
+      transition:transform .06s ease, background .12s ease, border-color .12s ease;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+    button:hover, .linkbtn:hover{
+      border-color:rgba(191,230,208,.70);
+      background:rgba(191,230,208,.16);
+    }
+    button:active, .linkbtn:active{transform:translateY(1px)}
+    .tiny{font-size:12px;color:rgba(230,242,236,.62);margin-top:10px}
+    .statusrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .pill{
+      border:1px solid rgba(230,242,236,.14);
+      background:rgba(255,255,255,.03);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color:rgba(230,242,236,.78);
+    }
+    .ok{border-color:rgba(191,230,208,.35);color:rgba(191,230,208,.95)}
+    .bad{border-color:rgba(255,140,140,.35);color:rgba(255,180,180,.95)}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Botnology 101 — Online</h1>
-    <p>API is live. Landing page is now live.</p>
-    <p style="margin-top:12px;">
-      Test: <a href="/api/health">/api/health</a>
-    </p>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="avatar">
+          <img id="botonicImg" src="/dr-botonic.png" alt="Dr. Botonic" />
+        </div>
+        <div class="title">
+          <h1>Botnology 101</h1>
+          <p>
+            Smarter learning on your time. Your backend is up — now we wire the student experience so it actually feels like a product.
+          </p>
+          <div class="statusrow">
+            <span class="pill" id="apiStatus">API: checking…</span>
+            <span class="pill">Health: <code>/api/health</code></span>
+            <span class="pill">Chat: <code>/api/chat</code></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>Student actions</h2>
+          <p>Pick where you want to go. These are real links/pages — no fake buttons.</p>
+          <div class="btns">
+            <a class="linkbtn" href="/dashboard.html" id="goDashboard">Student Dashboard</a>
+            <a class="linkbtn" href="/pricing.html" id="goPricing">Pricing</a>
+            <button id="goTutor">Open Tutor</button>
+            <button id="goHealth">Test API Health</button>
+          </div>
+          <div class="tiny">
+            If Dr. Botonic doesn’t show, your file is not at <code>public/dr-botonic.png</code>.
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>What’s missing (why the “student area” feels fake)</h2>
+          <p>
+            To save projects/files per student you need: (1) login/auth, (2) a database, (3) storage for uploads.
+            Without that, a “dashboard” is just a page pretending.
+          </p>
+          <div class="btns" style="margin-top:12px">
+            <button id="showPlan">Show build plan</button>
+          </div>
+          <div class="tiny" id="planText" style="display:none;margin-top:10px;">
+            Recommended stack: <b>Supabase Auth + DB + Storage</b>. We can wire it so each student has:
+            Projects → folders → uploads → notes → chat history.
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <script src="/script.js"></script>
+  <script>
+    // Tiny inline safety net so buttons still work even if script.js is missing.
+    (function(){
+      const $ = (id)=>document.getElementById(id);
+      const apiStatus = $("apiStatus");
+
+      function setStatus(ok, msg){
+        if(!apiStatus) return;
+        apiStatus.textContent = msg;
+        apiStatus.classList.remove("ok","bad");
+        apiStatus.classList.add(ok ? "ok" : "bad");
+      }
+
+      async function checkHealth(){
+        try{
+          const r = await fetch("/api/health", {cache:"no-store"});
+          if(!r.ok) throw new Error("HTTP " + r.status);
+          const j = await r.json();
+          setStatus(true, "API: ok");
+          return j;
+        }catch(e){
+          setStatus(false, "API: not responding");
+          return null;
+        }
+      }
+
+      $("goTutor")?.addEventListener("click", ()=> {
+        // change this to your tutor route if it’s different
+        window.location.href = "/dashboard.html";
+      });
+      $("goHealth")?.addEventListener("click", ()=> window.location.href="/api/health");
+      $("showPlan")?.addEventListener("click", ()=>{
+        const el = $("planText");
+        if(!el) return;
+        el.style.display = (el.style.display==="none") ? "block" : "none";
+      });
+
+      // If the image 404s, hide it so it doesn't look broken.
+      $("botonicImg")?.addEventListener("error", ()=> {
+        const img = $("botonicImg");
+        if(img) img.style.display = "none";
+      });
+
+      checkHealth();
+    })();
+  </script>
 </body>
 </html>
