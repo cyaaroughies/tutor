@@ -272,6 +272,280 @@
     box.scrollTop = box.scrollHeight;
   }
 
+ <script>
+  window.__SUPABASE_URL__ = "PASTE_SUPABASE_URL_HERE";
+  window.__SUPABASE_ANON_KEY__ = "PASTE_SUPABASE_ANON_KEY_HERE";
+</script>
+<script type="module" src="/dashboard-auth.js"></script>
+
+<script>
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  
+  // ---------- tiny utils ----------
+  function toast(title, msg){
+    const t = $("toast");
+    $("toastTitle").textContent = title;
+    $("toastMsg").textContent = msg;
+    t.style.display = "block";
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=> t.style.display = "none", 3600);
+  }
+  function safeJson(raw){
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+  function uid(){
+    return Math.random().toString(16).slice(2) + Date.now().toString(16);
+  }
+  function lsGet(key, fallback){
+    try{
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    }catch{ return fallback; }
+  }
+  function lsSet(key, val){
+    localStorage.setItem(key, JSON.stringify(val));
+  }
+
+  // ---------- modal (tutor) ----------
+  function ensureTutorModal(){
+    if ($("tutorModal")) return;
+
+    const wrap = document.createElement("div");
+    wrap.id = "tutorModal";
+    wrap.style.cssText = `
+      position:fixed; inset:0; display:none; z-index:60;
+      background:rgba(0,0,0,.55); backdrop-filter: blur(8px);
+      padding:14px;
+    `;
+    wrap.innerHTML = `
+      <div style="
+        max-width:980px; margin:4vh auto; border:1px solid rgba(230,242,236,.12);
+        border-radius:22px; background:rgba(10,18,13,.92); box-shadow: 0 22px 60px rgba(0,0,0,.55);
+        overflow:hidden;">
+        <div style="padding:14px 16px; border-bottom:1px solid rgba(230,242,236,.10); display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div style="font-weight:950; letter-spacing:.2px;">Tutor Session • Dr. Botonic</div>
+          <div style="display:flex; gap:8px;">
+            <button id="tutorClear" class="btn secondary" type="button">Clear</button>
+            <button id="tutorClose" class="btn" type="button">Close</button>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 320px; gap:12px; padding:14px;">
+          <div style="border:1px solid rgba(230,242,236,.10); border-radius:18px; background:rgba(255,255,255,.03); overflow:hidden;">
+            <div id="tutorChat" style="height:52vh; overflow:auto; padding:12px;">
+              <div style="opacity:.75; font-size:13px; line-height:1.45;">
+                Ask anything. I’ll answer like a real tutor: clear, step-by-step, no fluff.
+              </div>
+            </div>
+            <div style="border-top:1px solid rgba(230,242,236,.10); padding:10px; display:flex; gap:10px; flex-wrap:wrap;">
+              <input id="tutorInput" class="input" placeholder="Type your question…" />
+              <button id="tutorSend" class="btn" type="button">Send</button>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div style="border:1px solid rgba(230,242,236,.10); border-radius:18px; background:rgba(255,255,255,.03); padding:12px;">
+              <div style="font-weight:950; font-size:13px; letter-spacing:.2px;">Session Context</div>
+              <div style="margin-top:10px; font-size:12px; color:rgba(230,242,236,.70); line-height:1.4;">
+                <div><b>Project:</b> <span id="ctxProject">—</span></div>
+                <div style="margin-top:6px;"><b>Folder:</b> <span id="ctxFolder">—</span></div>
+              </div>
+            </div>
+
+            <div style="border:1px solid rgba(230,242,236,.10); border-radius:18px; background:rgba(255,255,255,.03); padding:12px;">
+              <div style="font-weight:950; font-size:13px; letter-spacing:.2px;">Quick Actions</div>
+              <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+                <button id="qaQuiz" class="btn secondary" type="button">Generate quick quiz</button>
+                <button id="qaPlan" class="btn secondary" type="button">Build a 7-day plan</button>
+                <button id="qaExplain" class="btn secondary" type="button">Explain like I’m 12</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(wrap);
+
+    // close on backdrop click
+    wrap.addEventListener("click", (e)=>{
+      if(e.target === wrap) closeTutor();
+    });
+
+    $("tutorClose").addEventListener("click", closeTutor);
+    $("tutorClear").addEventListener("click", ()=>{
+      lsSet("bn_chat_history", []);
+      $("tutorChat").innerHTML = `<div style="opacity:.75; font-size:13px; line-height:1.45;">
+        Cleared. Ask anything.
+      </div>`;
+      toast("Session cleared", "Chat history cleared for this device.");
+    });
+
+    $("tutorSend").addEventListener("click", ()=> sendTutor());
+    $("tutorInput").addEventListener("keydown", (e)=>{
+      if(e.key === "Enter") sendTutor();
+    });
+
+    $("qaQuiz").addEventListener("click", ()=>{
+      $("tutorInput").value = "Make me a quick quiz on my current topic. Ask 5 questions first to calibrate me.";
+      $("tutorInput").focus();
+    });
+    $("qaPlan").addEventListener("click", ()=>{
+      $("tutorInput").value = "Build me a 7-day study plan with 30-60 minute sessions and checkpoints.";
+      $("tutorInput").focus();
+    });
+    $("qaExplain").addEventListener("click", ()=>{
+      const cur = $("tutorInput").value.trim();
+      $("tutorInput").value = cur ? `Explain this like I'm 12: ${cur}` : "Explain the concept like I'm 12, with a simple example.";
+      $("tutorInput").focus();
+    });
+  }
+
+  function openTutor(){
+    ensureTutorModal();
+    $("tutorModal").style.display = "block";
+    document.body.style.overflow = "hidden";
+    syncContext();
+    loadTutorHistory();
+    setTimeout(()=> $("tutorInput").focus(), 50);
+  }
+  function closeTutor(){
+    $("tutorModal").style.display = "none";
+    document.body.style.overflow = "";
+  }
+  function syncContext(){
+    const state = getState();
+    $("ctxProject").textContent = state.activeProject?.name || "—";
+    $("ctxFolder").textContent  = state.activeFolder?.name || "—";
+  }
+
+  // ---------- state (localStorage scaffolding) ----------
+  const STATE_KEY = "bn_state_v1";
+
+  function getState(){
+    return lsGet(STATE_KEY, {
+      studentName: (localStorage.getItem("bn_student_name") || "Student"),
+      plan: "PRO",
+      projects: [
+        { id:"p1", name:"Anatomy — Unit 3 Review", status:"ACTIVE", updated:"yesterday" },
+        { id:"p2", name:"Math — Fractions & Ratios", status:"DRAFT", updated:"2d ago" },
+        { id:"p3", name:"Chemistry — Periodic Trends", status:"NEEDS LOVE", updated:"3d ago" }
+      ],
+      folders: [
+        { id:"f1", name:"Notes" },
+        { id:"f2", name:"Uploads" },
+        { id:"f3", name:"Quizzes" }
+      ],
+      files: [],
+      activeProjectId: "p1",
+      activeFolderId: "f1"
+    });
+  }
+  function setState(s){ lsSet(STATE_KEY, s); }
+
+  function activeProject(state){
+    return state.projects.find(p=>p.id===state.activeProjectId) || null;
+  }
+  function activeFolder(state){
+    return state.folders.find(f=>f.id===state.activeFolderId) || null;
+  }
+
+  // ---------- UI init ----------
+  const now = new Date();
+  const hr = now.getHours();
+  const greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
+  $("heroTitle").textContent = `${greet}. Ready to level up?`;
+
+  // name/plan
+  const s0 = getState();
+  $("studentName").textContent = s0.studentName || "Student";
+  $("planPill").textContent = `PLAN: ${s0.plan || "PRO"}`;
+
+  // Stamp
+  const stamp = now.toLocaleString(undefined, { weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+  $("progressStamp").textContent = "Updated " + stamp;
+
+  // Make nav buttons real
+  $("navHome").setAttribute("href", "/");
+  $("navBilling").setAttribute("href", "/pricing");
+  // Projects/Files/Settings: keep in-dashboard behavior, not dead clicks
+
+  // Fix avatar fallback
+  $("botonicImg")?.addEventListener("error", ()=>{
+    $("botonicImg").src =
+      "data:image/svg+xml;charset=utf-8," +
+      encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128">
+        <rect width="100%" height="100%" fill="rgba(191,230,208,.08)"/>
+        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle"
+          fill="rgba(230,242,236,.7)" font-family="Arial" font-size="14">Dr. Botonic</text>
+      </svg>`);
+  });
+
+  // Progress bars
+  const goal = 35;
+  $("goalPct").textContent = goal;
+  $("goalBar").style.width = Math.max(8, Math.min(100, goal)) + "%";
+
+  const trend = 12;
+  $("trendVal").textContent = `+${trend}`;
+  $("trendBar").style.width = Math.max(10, Math.min(100, 35 + trend)) + "%";
+
+  // Checkout hint
+  const params = new URLSearchParams(window.location.search);
+  const checkout = params.get("checkout");
+  if(checkout === "success"){
+    $("checkoutHint").textContent = "Checkout confirmed. Your workspace is unlocked. 🚀";
+    toast("Subscription activated", "Welcome to the paid tier. Premium mode engaged.");
+  } else if(checkout === "cancel"){
+    $("checkoutHint").textContent = "Checkout canceled. No worries — you can retry anytime from Billing.";
+    toast("Checkout canceled", "Nothing was charged. Pick a plan when ready.");
+  } else {
+    $("checkoutHint").textContent = "Tip: This panel will reflect plan changes instantly once we wire auth.";
+  }
+
+  // ---------- API health check ----------
+  async function checkAPI(){
+    try{
+      const r = await fetch("/api/health", { cache: "no-store" });
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      await r.json();
+
+      $("apiPill").textContent = "API: OK";
+      $("apiPill").classList.remove("dim");
+      $("apiStatusText").textContent = "Operational";
+      $("apiBar").style.width = "92%";
+    }catch(e){
+      $("apiPill").textContent = "API: DOWN";
+      $("apiPill").style.borderColor = "rgba(255,180,180,.28)";
+      $("apiPill").style.background = "rgba(255,180,180,.08)";
+      $("apiPill").style.color = "rgba(255,210,210,.95)";
+      $("apiStatusText").textContent = "Degraded";
+      $("apiBar").style.width = "26%";
+    }
+  }
+  checkAPI();
+
+  // ---------- Tutor chat wiring ----------
+  function renderChatMessage(role, text){
+    const box = $("tutorChat");
+    const row = document.createElement("div");
+    row.style.margin = "10px 0";
+    row.style.display = "flex";
+    row.style.justifyContent = role === "user" ? "flex-end" : "flex-start";
+    const bubble = document.createElement("div");
+    bubble.style.maxWidth = "78%";
+    bubble.style.padding = "10px 12px";
+    bubble.style.borderRadius = "16px";
+    bubble.style.border = "1px solid rgba(230,242,236,.10)";
+    bubble.style.background = role === "user" ? "rgba(191,230,208,.10)" : "rgba(255,255,255,.03)";
+    bubble.style.color = "rgba(230,242,236,.92)";
+    bubble.style.fontSize = "13px";
+    bubble.style.lineHeight = "1.45";
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
+  }
+
   function loadTutorHistory(){
     const hist = lsGet("bn_chat_history", []);
     const box = $("tutorChat");
@@ -461,3 +735,138 @@
 
 })();
 </script>
+
+  // ---------- Button wiring ----------
+  $("btnStart").addEventListener("click", ()=>{
+    openTutor();
+  });
+
+  $("btnResume").addEventListener("click", ()=>{
+    const hist = lsGet("bn_chat_history", []);
+    if(!hist.length){
+      toast("No session found", "Start a session first. I’ll remember it on this device.");
+      openTutor();
+      return;
+    }
+    openTutor();
+    toast("Resumed", "Loaded your last session from this device.");
+  });
+
+  $("btnNewProject").addEventListener("click", ()=>{
+    const name = prompt("New project name:", "New Project");
+    if(!name) return;
+
+    const s = getState();
+    const id = "p_" + uid().slice(0,8);
+    s.projects.unshift({ id, name: name.trim(), status:"DRAFT", updated:"now" });
+    s.activeProjectId = id;
+    setState(s);
+    toast("Project created", `"${name.trim()}" is now active.`);
+    syncContext();
+  });
+
+  // Ask button (quick prompt -> opens tutor and sends)
+  $("btnAsk").addEventListener("click", ()=>{
+    const q = $("quickPrompt").value.trim();
+    if(!q){
+      toast("Need a prompt", "Type a question first.");
+      return;
+    }
+    openTutor();
+    $("tutorInput").value = q;
+    $("quickPrompt").value = "";
+    sendTutor();
+  });
+
+  // Upload file -> file picker + store metadata locally
+  $("btnUpload").addEventListener("click", ()=>{
+    const inp = document.createElement("input");
+    inp.type = "file";
+    inp.multiple = true;
+    inp.onchange = ()=>{
+      const files = Array.from(inp.files || []);
+      if(!files.length) return;
+
+      const s = getState();
+      const proj = activeProject(s);
+      const folder = activeFolder(s);
+      files.forEach(f=>{
+        s.files.unshift({
+          id:"file_" + uid().slice(0,10),
+          name: f.name,
+          size: f.size,
+          type: f.type || "file",
+          projectId: proj?.id || null,
+          folderId: folder?.id || null,
+          added: Date.now()
+        });
+      });
+      setState(s);
+      toast("Files added", `Added ${files.length} file(s) to "${proj?.name || "workspace"}". (Local-only for now)`);
+    };
+    inp.click();
+  });
+
+  $("btnNewFolder").addEventListener("click", ()=>{
+    const name = prompt("Folder name:", "New Folder");
+    if(!name) return;
+
+    const s = getState();
+    const id = "f_" + uid().slice(0,8);
+    s.folders.push({ id, name: name.trim() });
+    s.activeFolderId = id;
+    setState(s);
+    toast("Folder created", `"${name.trim()}" is now active.`);
+    syncContext();
+  });
+
+  // Open workspace -> scroll to workspace card and pulse it
+  const workspaceCard = document.querySelectorAll(".card")[1]; // right column first card
+  $("btnOpenWorkspace").addEventListener("click", ()=>{
+    if(workspaceCard){
+      workspaceCard.scrollIntoView({ behavior:"smooth", block:"start" });
+      workspaceCard.style.boxShadow = "0 0 0 6px rgba(191,230,208,.10), var(--shadow2)";
+      setTimeout(()=> workspaceCard.style.boxShadow = "var(--shadow2)", 850);
+      toast("Workspace", "You’re in Projects • Files • Notes mode.");
+    }
+  });
+
+  // Recommendations -> prefill and open tutor
+  $("rec1").addEventListener("click", ()=>{ openTutor(); $("tutorInput").value = "Run a 12-minute micro-session on my weakest concept. Start by asking 3 diagnostic questions."; $("tutorInput").focus(); });
+  $("rec2").addEventListener("click", ()=>{ openTutor(); $("tutorInput").value = "Give me a quick quiz on anatomy core systems. Adaptive difficulty."; $("tutorInput").focus(); });
+  $("rec3").addEventListener("click", ()=>{ openTutor(); $("tutorInput").value = "Build a study plan for this week around my schedule. Ask what days/times I can study."; $("tutorInput").focus(); });
+
+  // Workspace project items -> select active project
+  function selectProjectByName(name){
+    const s = getState();
+    const found = s.projects.find(p=>p.name===name);
+    if(found){
+      s.activeProjectId = found.id;
+      setState(s);
+      toast("Project selected", found.name);
+      syncContext();
+    }
+  }
+  $("proj1")?.addEventListener("click", ()=>selectProjectByName("Anatomy — Unit 3 Review"));
+  $("proj2")?.addEventListener("click", ()=>selectProjectByName("Math — Fractions & Ratios"));
+  $("proj3")?.addEventListener("click", ()=>selectProjectByName("Chemistry — Periodic Trends"));
+
+  // Sidebar links
+  $("navProjects").addEventListener("click", (e)=>{ e.preventDefault(); $("btnOpenWorkspace").click(); });
+  $("navFiles").addEventListener("click", (e)=>{ e.preventDefault(); $("btnOpenWorkspace").click(); toast("Files", "Upload files now. Storage sync comes next."); });
+  $("navSettings").addEventListener("click", (e)=>{
+    e.preventDefault();
+    const name = prompt("Student display name:", $("studentName").textContent || "Student");
+    if(name){
+      const s = getState();
+      s.studentName = name.trim();
+      setState(s);
+      localStorage.setItem("bn_student_name", name.trim());
+      $("studentName").textContent = name.trim();
+      toast("Saved", "Updated your display name on this device.");
+    }
+  });
+
+})();
+</script>
+
