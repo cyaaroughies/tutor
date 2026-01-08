@@ -186,35 +186,25 @@ async def pricing():
     const buttons = Array.from(document.querySelectorAll("button.btn"));
     buttons.forEach(b=>b.disabled=true);
 
-    try{
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({ plan })
-      });
+  
+  try{
+    const res = await fetch("/api/create-checkout-session", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ plan: planKey })
+    });
 
-      const raw = await res.text();
-      let data;
-      try { data = JSON.parse(raw); }
-      catch { data = { detail: raw }; }
-
-      if(!res.ok){
-        if(err) err.textContent = "Error: " + (data.detail || "checkout failed");
-        buttons.forEach(b=>b.disabled=false);
-        return;
-      }
-
-      if(data.url){
-        window.location.href = data.url;
-      } else {
-        if(err) err.textContent = "No checkout URL returned.";
-        buttons.forEach(b=>b.disabled=false);
-      }
-    } catch(e){
-      if(err) err.textContent = "Network error: " + e;
-      buttons.forEach(b=>b.disabled=false);
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){
+      alert("Checkout error: " + (data.detail || "Unable to start checkout"));
+      return;
     }
+    if(data.url) window.location.href = data.url;
+    else alert("No checkout URL returned.");
+  } catch(e){
+    alert("Network error starting checkout.");
   }
+}
 
   setReturnState();
 </script>
