@@ -349,13 +349,15 @@ async def create_checkout_session(request: Request):
     base = get_app_base(request)
 
     try:
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            line_items=[{"price": pm[plan], "quantity": 1}],
-            success_url=f"{base}/dashboard?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{base}/pricing?checkout=cancel",
-        )
-        return {"url": session.url}
+       session = stripe.checkout.Session.create(
+    mode="subscription",
+    line_items=[{"price": pm[plan], "quantity": 1}],
+    success_url=f"{base}/dashboard.html?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
+    cancel_url=f"{base}/pricing.html?checkout=cancel",
+)
+return {"url": session.url}
+
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
