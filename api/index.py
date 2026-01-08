@@ -278,4 +278,8 @@ async def create_checkout_session(request: Request):
 # Optional: basic HTML root (only used if you route / to api)
 @app.get("/_api_root", response_class=HTMLResponse)
 async def api_root():
+<<<<<<< Updated upstream
     return "<h1>API OK</h1><p>Use /api/health, /api/chat, /api/create-checkout-session</p>"
+=======
+    return "<h1>API OK</h1><p>Use /api/health, /api/chat, /api/create-checkout-session</p>"
+>>>>>>> Stashed changes
