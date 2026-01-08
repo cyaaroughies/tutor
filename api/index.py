@@ -545,7 +545,7 @@ async def pricing():
     script = r"""
       async function startCheckout(planKey){
         try{
-          const res = await fetch("/api/create-checkout-session", {
+          fetch("/api/create-checkout-session", {
             method:"POST",
             headers:{ "Content-Type":"application/json" },
             body: JSON.stringify({ plan: planKey })
