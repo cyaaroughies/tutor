@@ -244,13 +244,10 @@ def stripe_debug():
     }
 
 
-@app.get("/health")
 @app.get("/api/health")
+@app.get("/health")
 async def health():
-    return {
-        "status": "ok",
-        "openai_configured": bool((os.getenv("OPENAI_API_KEY") or "").strip()),
-        "stripe_configured": stripe_ready(),
+    return {"status": "ok"}
     }
 
 
