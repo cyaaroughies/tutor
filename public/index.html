@@ -1,51 +1,25 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Botnotics Tutor</title>
-  <link rel="stylesheet" href="/style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Botnology 101</title>
+  <style>
+    body{font-family:Arial,system-ui;background:#0f1f17;color:#e6f2ec;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}
+    .box{padding:28px 34px;border:1px solid rgba(230,242,236,.15);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center}
+    h1{margin:0 0 10px;font-size:34px;letter-spacing:.5px}
+    p{margin:0;opacity:.9}
+    a{color:#bfe6d0;text-decoration:none;border-bottom:1px solid rgba(191,230,208,.4)}
+    a:hover{border-bottom-color:rgba(191,230,208,.9)}
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="top">
-      <div class="brand">
-        <div class="avatar">
-          <img src="/assets/botonic.png" alt="Mr. Botonic" />
-        </div>
-        <div>
-          <div class="title">Mr. Botonic</div>
-          <div class="subtitle">Smarter learning on your time</div>
-        </div>
-      </div>
-      <div class="status" id="status">Checking...</div>
-    </header>
-
-<button data-checkout onclick="startCheckout('pro')">Select Pro</button>
-<button data-checkout onclick="startCheckout('semi_pro')">Select Semi-Pro</button>
-<button data-checkout onclick="startCheckout('yearly_pro')">Select Yearly Pro</button>
-
-
-    <main class="card">
-      <div class="chat" id="chat"></div>
-      
-<button data-checkout onclick="startCheckout('pro')">Select Pro</button>
-<button data-checkout onclick="startCheckout('semi_pro')">Select Semi-Pro</button>
-<button data-checkout onclick="startCheckout('yearly_pro')">Select Yearly Pro</button>
-
-      <div class="composer">
-        <input id="input" type="text" placeholder="Ask me anything..." autocomplete="off" />
-        <button id="send">Send</button>
-      </div>
-    </main>
-
-    <footer class="foot">
-      <span>Template mode • /api/chat</span>
-    </footer>
+  <div class="box">
+    <h1>Botnology 101 — Online</h1>
+    <p>API is live. Landing page is now live.</p>
+    <p style="margin-top:12px;">
+      Test: <a href="/api/health">/api/health</a>
+    </p>
   </div>
-
-  <script src="/script.js"></script>
 </body>
-</html>
-
-
