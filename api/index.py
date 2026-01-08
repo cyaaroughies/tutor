@@ -228,14 +228,20 @@ def page_shell(title: str, active: str, body_html: str, extra_head: str = "", ex
 
 
 # ----------------------------
-# Debug + Health (support both / and /api/)
+# Health (support both / and /api/)
 # ----------------------------
-@app.get("/stripe-debug")
-@app.get("/api/stripe-debug")
-def stripe_debug():
-    pm = stripe_price_map()
+@app.get("/api/health")
+@app.get("/health")
+async def health():
+    pm = {}
+    try:
+        pm = stripe_price_map() if "stripe_price_map" in globals() else {}
+    except Exception:
+        pm = {}
+
     return {
-        "stripe_imported": bool(stripe),
+        "status": "ok",
+        "stripe_imported": bool(globals().get("stripe")),
         "has_secret": bool((os.getenv("STRIPE_SECRET_KEY") or "").strip()),
         "pro": pm.get("pro", ""),
         "semi_pro": pm.get("semi_pro", ""),
@@ -243,12 +249,6 @@ def stripe_debug():
         "app_base_url": (os.getenv("APP_BASE_URL") or "").strip(),
     }
 
-
-@app.get("/api/health")
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-    }
 
 
 # ----------------------------
@@ -320,7 +320,6 @@ async def chat(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
 
-
 # ----------------------------
 # Stripe checkout
 # Plans: pro | semi_pro | yearly_pro
@@ -339,25 +338,22 @@ async def create_checkout_session(request: Request):
     plan = (data.get("plan") or "").strip().lower()
     pm = stripe_price_map()
 
-    if plan not in pm or not pm[plan] or not pm[plan].startswith("price_"):
+    if plan not in pm or not pm[plan] or not str(pm[plan]).startswith("price_"):
         raise HTTPException(status_code=400, detail="Invalid plan or missing Stripe price ID for this plan.")
 
     stripe.api_key = (os.getenv("STRIPE_SECRET_KEY") or "").strip()
     base = get_app_base(request)
 
     try:
-       session = stripe.checkout.Session.create(
-    mode="subscription",
-    line_items=[{"price": pm[plan], "quantity": 1}],
-    success_url=f"{base}/dashboard.html?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
-    cancel_url=f"{base}/pricing.html?checkout=cancel",
-)
-return {"url": session.url}
-
-        
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": pm[plan], "quantity": 1}],
+            success_url=f"{base}/dashboard.html?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{base}/pricing.html?checkout=cancel",
+        )
+        return {"url": session.url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # ----------------------------
 # Pages
