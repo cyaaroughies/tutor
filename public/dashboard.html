@@ -350,3 +350,490 @@
       gap:12px;
     }
     @media (max-width:560px){ .kpis{grid-template-columns:1fr} }
+    .kpi{
+      border:1px solid rgba(230,242,236,.10);
+      border-radius:16px;
+      padding:12px;
+      background: rgba(255,255,255,.03);
+    }
+    .kpi .t{font-size:11px;color:var(--muted2);letter-spacing:.22px}
+    .kpi .n{margin-top:6px;font-size:18px;font-weight:950;letter-spacing:.25px}
+    .bar{
+      margin-top:10px;
+      height:10px;
+      border-radius:999px;
+      background: rgba(230,242,236,.08);
+      border:1px solid rgba(230,242,236,.10);
+      overflow:hidden;
+    }
+    .bar > i{
+      display:block;
+      height:100%;
+      width:35%;
+      background: linear-gradient(90deg, rgba(191,230,208,.55), rgba(125,255,191,.45));
+      border-radius:999px;
+      box-shadow: var(--ring);
+    }
+
+    /* --- lists --- */
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .item{
+      border:1px solid rgba(230,242,236,.10);
+      background: rgba(255,255,255,.03);
+      border-radius:16px;
+      padding:12px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      transition: border-color .12s ease, transform .08s ease, background .12s ease;
+    }
+    .item:hover{
+      border-color: rgba(191,230,208,.26);
+      background: rgba(191,230,208,.05);
+      transform: translateY(-1px);
+    }
+    .item .left{min-width:0}
+    .item .title{
+      margin:0;
+      font-weight:950;
+      font-size:13px;
+      letter-spacing:.15px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .item .desc{
+      margin-top:6px;
+      font-size:12px;
+      color:rgba(230,242,236,.62);
+      line-height:1.35;
+    }
+    .badge{
+      flex:0 0 auto;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:11px;
+      font-weight:950;
+      letter-spacing:.18px;
+      border:1px solid rgba(230,242,236,.14);
+      background: rgba(255,255,255,.03);
+      color: rgba(230,242,236,.72);
+    }
+    .badge.ok{
+      border-color: rgba(125,255,191,.28);
+      background: rgba(125,255,191,.08);
+      color: rgba(125,255,191,.95);
+    }
+    .badge.warn{
+      border-color: rgba(255,180,180,.28);
+      background: rgba(255,180,180,.08);
+      color: rgba(255,210,210,.95);
+    }
+
+    /* --- composer --- */
+    .composer{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+    .input{
+      flex: 1;
+      min-width: 220px;
+      border-radius:14px;
+      border:1px solid rgba(230,242,236,.12);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding:11px 12px;
+      outline:none;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.12px;
+    }
+    .input:focus{
+      border-color: rgba(191,230,208,.34);
+      box-shadow: var(--ring);
+    }
+    .hint{font-size:11px;color:rgba(230,242,236,.55);margin-top:8px}
+
+    /* --- toast --- */
+    .toast{
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      width: min(420px, calc(100vw - 28px));
+      border:1px solid rgba(230,242,236,.12);
+      border-radius: 18px;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      padding: 12px 12px;
+      display:none;
+      z-index: 50;
+    }
+    .toast .t{
+      font-weight:950;
+      font-size:13px;
+      letter-spacing:.2px;
+      margin:0;
+    }
+    .toast .m{
+      margin-top:6px;
+      font-size:12px;
+      color:rgba(230,242,236,.70);
+      line-height:1.35;
+    }
+
+    /* subtle motion for premium feel */
+    @media (prefers-reduced-motion: no-preference){
+      .card,.headline,.profile{animation: pop .38s ease both}
+      .card:nth-child(2){animation-delay:.05s}
+      .card:nth-child(3){animation-delay:.08s}
+      @keyframes pop{
+        from{opacity:0; transform: translateY(6px)}
+        to{opacity:1; transform: translateY(0)}
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>BOTNOLOGY 101</h1>
+          <p>Student Workspace • Premium</p>
+        </div>
+      </div>
+
+      <section class="profile">
+        <div class="profileTop">
+          <div class="avatar" title="Dr. Botonic">
+            <img id="botonicImg" src="/dr-botonic.png" alt="Dr. Botonic" />
+          </div>
+          <div class="who">
+            <p class="name" id="studentName">Student</p>
+            <div class="meta">
+              <span class="pill" id="planPill">PLAN: PRO</span>
+              <span class="pill dim" id="apiPill">API: checking…</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profileBottom">
+          <div class="mini">
+            <div class="k">Study streak</div>
+            <div class="v" id="streakVal">4 days</div>
+            <div class="s">Momentum wins.</div>
+          </div>
+          <div class="mini">
+            <div class="k">Focus score</div>
+            <div class="v" id="focusVal">82</div>
+            <div class="s">Above cohort avg.</div>
+          </div>
+        </div>
+      </section>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="/" id="navHome"><span>Home</span><small>Landing</small></a>
+        <a href="/pricing" id="navBilling"><span>Billing</span><small>Plans</small></a>
+        <a href="#" id="navProjects"><span>Projects</span><small>Workspace</small></a>
+        <a href="#" id="navFiles"><span>Files</span><small>Uploads</small></a>
+        <a href="#" id="navSettings"><span>Settings</span><small>Profile</small></a>
+      </nav>
+
+      <div style="padding:12px 10px 0">
+        <p class="hint">
+          Pro tip: this dashboard is designed to plug into real student accounts later
+          (Supabase/Firebase). Zero UI rewrite required.
+        </p>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <div class="headline">
+          <h2 id="heroTitle">Welcome back.</h2>
+          <p id="heroSub">
+            Today’s mission: ship one focused win. Start a session, save a project, and keep your streak alive.
+          </p>
+        </div>
+
+        <div class="quick">
+          <button class="btn" id="btnStart">Start tutoring session</button>
+          <button class="btn secondary" id="btnResume">Resume last session</button>
+          <button class="btn secondary" id="btnNewProject">New project</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <!-- LEFT COLUMN -->
+        <div class="card">
+          <div class="cardHeader">
+            <h3>Progress Command Center</h3>
+            <span id="progressStamp">Updated now</span>
+          </div>
+          <div class="cardBody">
+            <div class="kpis">
+              <div class="kpi">
+                <div class="t">Weekly goal</div>
+                <div class="n"><span id="goalPct">35</span>% complete</div>
+                <div class="bar" aria-label="Weekly goal progress"><i id="goalBar"></i></div>
+              </div>
+              <div class="kpi">
+                <div class="t">Mastery trend</div>
+                <div class="n"><span id="trendVal">+12</span> points</div>
+                <div class="bar" aria-label="Mastery trend"><i id="trendBar" style="width:55%"></i></div>
+              </div>
+            </div>
+
+            <div style="margin-top:14px" class="list">
+              <div class="item" role="button" tabindex="0" id="rec1">
+                <div class="left">
+                  <p class="title">Recommended next step: 12-minute micro-session</p>
+                  <div class="desc">We’ll review your weakest concept and lock it in with 3 targeted reps.</div>
+                </div>
+                <span class="badge ok">HIGH ROI</span>
+              </div>
+
+              <div class="item" role="button" tabindex="0" id="rec2">
+                <div class="left">
+                  <p class="title">Quick quiz: Anatomy — core systems</p>
+                  <div class="desc">Confidence check before we scale difficulty. Takes ~6 minutes.</div>
+                </div>
+                <span class="badge">OPTIONAL</span>
+              </div>
+
+              <div class="item" role="button" tabindex="0" id="rec3">
+                <div class="left">
+                  <p class="title">Build a study plan for this week</p>
+                  <div class="desc">One clean plan. No chaos. We’ll schedule it around your life.</div>
+                </div>
+                <span class="badge ok">SMART</span>
+              </div>
+            </div>
+
+            <div class="composer">
+              <input class="input" id="quickPrompt" placeholder="Ask Dr. Botonic: e.g., 'Explain the kidney like I'm 12'"/>
+              <button class="btn" id="btnAsk">Ask</button>
+            </div>
+            <div class="hint">
+              This is UI-only right now. Next step is wiring it to your <code>/api/chat</code> endpoint.
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <section class="card">
+            <div class="cardHeader">
+              <h3>Workspace</h3>
+              <span>Projects • Files • Notes</span>
+            </div>
+            <div class="cardBody">
+              <div class="list">
+                <div class="item" id="proj1">
+                  <div class="left">
+                    <p class="title">Anatomy — Unit 3 Review</p>
+                    <div class="desc">Notes + flashcards + quiz prep. Last touched: yesterday.</div>
+                  </div>
+                  <span class="badge ok">ACTIVE</span>
+                </div>
+
+                <div class="item" id="proj2">
+                  <div class="left">
+                    <p class="title">Math — Fractions & Ratios</p>
+                    <div class="desc">Practice set in progress. Next: timed round.</div>
+                  </div>
+                  <span class="badge">DRAFT</span>
+                </div>
+
+                <div class="item" id="proj3">
+                  <div class="left">
+                    <p class="title">Chemistry — Periodic Trends</p>
+                    <div class="desc">Starter outline created. Needs examples + problem set.</div>
+                  </div>
+                  <span class="badge warn">NEEDS LOVE</span>
+                </div>
+              </div>
+
+              <div class="composer">
+                <button class="btn secondary" id="btnUpload">Upload file</button>
+                <button class="btn secondary" id="btnNewFolder">New folder</button>
+                <button class="btn" id="btnOpenWorkspace">Open workspace</button>
+              </div>
+
+              <div class="hint">
+                Later: each student gets their own storage + folders. For now, this is premium scaffolding.
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="cardHeader">
+              <h3>System Status</h3>
+              <span>Operational visibility</span>
+            </div>
+            <div class="cardBody">
+              <div class="kpis">
+                <div class="kpi">
+                  <div class="t">Backend</div>
+                  <div class="n" id="apiStatusText">Checking…</div>
+                  <div class="bar"><i id="apiBar" style="width:20%"></i></div>
+                </div>
+                <div class="kpi">
+                  <div class="t">Subscription</div>
+                  <div class="n" id="subStatusText">Active</div>
+                  <div class="bar"><i style="width:80%"></i></div>
+                </div>
+              </div>
+              <div class="hint" id="checkoutHint"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <p class="t" id="toastTitle">Update</p>
+    <div class="m" id="toastMsg">—</div>
+  </div>
+
+  <script>
+    (function(){
+      const $ = (id)=>document.getElementById(id);
+
+      function toast(title, msg){
+        const t = $("toast");
+        $("toastTitle").textContent = title;
+        $("toastMsg").textContent = msg;
+        t.style.display = "block";
+        clearTimeout(toast._t);
+        toast._t = setTimeout(()=> t.style.display = "none", 3600);
+      }
+
+      // --- dynamic greeting + lightweight personalization
+      const now = new Date();
+      const hr = now.getHours();
+      const greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
+      $("heroTitle").textContent = `${greet}. Ready to level up?`;
+
+      // Grab student name from localStorage if you want
+      const storedName = (localStorage.getItem("bn_student_name") || "").trim();
+      if(storedName) $("studentName").textContent = storedName;
+
+      // Checkout return indicator
+      const params = new URLSearchParams(window.location.search);
+      const checkout = params.get("checkout");
+      if(checkout === "success"){
+        $("checkoutHint").textContent = "Checkout confirmed. Your workspace is unlocked. 🚀";
+        toast("Subscription activated", "Welcome to the paid tier. Your dashboard is now in premium mode.");
+      } else if(checkout === "cancel"){
+        $("checkoutHint").textContent = "Checkout canceled. No worries — you can retry anytime from Billing.";
+        toast("Checkout canceled", "Nothing was charged. You can pick a plan again when ready.");
+      } else {
+        $("checkoutHint").textContent = "Tip: If your plan changes, this panel will reflect it instantly (once wired).";
+      }
+
+      // Image fallback (avoid broken avatar look)
+      $("botonicImg")?.addEventListener("error", ()=>{
+        $("botonicImg").style.display = "none";
+      });
+
+      // Fake-but-premium progress animation
+      const goal = 35; // placeholder; wire later
+      $("goalPct").textContent = goal;
+      const goalBar = $("goalBar");
+      goalBar.style.width = Math.max(8, Math.min(100, goal)) + "%";
+
+      const trend = 12;
+      $("trendVal").textContent = `+${trend}`;
+      $("trendBar").style.width = Math.max(10, Math.min(100, 35 + trend)) + "%";
+
+      // API health check
+      async function checkAPI(){
+        try{
+          const r = await fetch("/api/health", { cache: "no-store" });
+          if(!r.ok) throw new Error("HTTP " + r.status);
+          await r.json();
+
+          $("apiPill").textContent = "API: OK";
+          $("apiPill").classList.remove("dim");
+          $("apiStatusText").textContent = "Operational";
+          $("apiBar").style.width = "92%";
+          toast("System green", "Backend is responding. You’re good to go.");
+        }catch(e){
+          $("apiPill").textContent = "API: DOWN";
+          $("apiPill").style.borderColor = "rgba(255,180,180,.28)";
+          $("apiPill").style.background = "rgba(255,180,180,.08)";
+          $("apiPill").style.color = "rgba(255,210,210,.95)";
+          $("apiStatusText").textContent = "Degraded";
+          $("apiBar").style.width = "26%";
+          toast("System warning", "Backend didn't respond. Some actions may fail.");
+        }
+      }
+      checkAPI();
+
+      // Buttons (currently navigational / placeholders)
+      $("btnStart").addEventListener("click", ()=>{
+        toast("Launching tutor", "Next step: wire this button to your tutor UI + /api/chat.");
+        // If you have a tutor page, change this:
+        // window.location.href = "/tutor.html";
+      });
+
+      $("btnResume").addEventListener("click", ()=>{
+        toast("Resume", "Once you store sessions per student, this will reopen the last chat/project.");
+      });
+
+      $("btnNewProject").addEventListener("click", ()=>{
+        toast("New project", "We’ll create a project record once auth + DB is wired.");
+      });
+
+      $("btnAsk").addEventListener("click", ()=>{
+        const q = $("quickPrompt").value.trim();
+        if(!q){
+          toast("Need a prompt", "Type a question first. Then we’ll send it to /api/chat.");
+          return;
+        }
+        toast("Queued for Dr. Botonic", "UI is ready. Next phase: route this to /api/chat and render replies here.");
+      });
+
+      $("btnUpload").addEventListener("click", ()=>{
+        toast("Uploads", "Next phase: connect this to storage (Supabase bucket / S3).");
+      });
+
+      $("btnNewFolder").addEventListener("click", ()=>{
+        toast("Folders", "Next phase: persist folders per student, per project.");
+      });
+
+      $("btnOpenWorkspace").addEventListener("click", ()=>{
+        toast("Workspace", "We’ll build a full workspace view (projects, files, notes, chat history).");
+      });
+
+      // clickable recommendations
+      $("rec1").addEventListener("click", ()=> toast("Micro-session", "We’ll generate a focused 12-minute session plan."));
+      $("rec2").addEventListener("click", ()=> toast("Quick quiz", "We’ll generate a 10-question adaptive quiz."));
+      $("rec3").addEventListener("click", ()=> toast("Study plan", "We’ll build a week plan based on your schedule."));
+
+      // nav placeholders
+      $("navProjects").addEventListener("click", (e)=>{ e.preventDefault(); toast("Projects", "Coming next: real projects per student."); });
+      $("navFiles").addEventListener("click", (e)=>{ e.preventDefault(); toast("Files", "Coming next: uploads, previews, downloads."); });
+      $("navSettings").addEventListener("click", (e)=>{ e.preventDefault(); toast("Settings", "Coming next: profile, preferences, privacy."); });
+
+      // stamp
+      const stamp = now.toLocaleString(undefined, { weekday:"short", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+      $("progressStamp").textContent = "Updated " + stamp;
+    })();
+  </script>
+</body>
+</html>
