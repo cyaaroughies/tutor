@@ -1,0 +1,14 @@
+@app.get("/pricing", response_class=HTMLResponse)
+async def pricing():
+    return r"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Botnology 101 • Tuition Plans</title>
+</head>
+<body>
+  <h1>Pricing works</h1>
+</body>
+</html>
+"""

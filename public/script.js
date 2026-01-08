@@ -24,3 +24,4 @@ async function checkout(plan){
   } catch(e){
     alert("Network error: " + e);
   }
+}
