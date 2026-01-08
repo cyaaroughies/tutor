@@ -581,3 +581,4 @@ async def dashboard():
     </section>
     """
     return page_shell("Botnology 101 • Dashboard", "dashboard", body)
+    
