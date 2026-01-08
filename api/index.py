@@ -292,59 +292,114 @@ async def dr_image():
 # Accepts:
 #   { "message": "...", "subject": "...", "history":[{role,content}] }
 # ----------------------------
+from fastapi import Request, Header, HTTPException
+from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
+
+# --- Make sure ChatRequest matches what your dashboard sends ---
+class ChatTurn(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    subject: Optional[str] = None
+    history: Optional[List[ChatTurn]] = None
+    context: Optional[Dict[str, Any]] = None
+
+
+# ----------------------------
+# Chat (Supabase-gated)
+# Accepts:
+#   { "message": "...", "subject": "...", "history":[{role,content}], "context": {...} }
+# Also accepts dashboard:
+#   { "message": "...", "context": {...} }
+# ----------------------------
 @app.post("/api/chat")
-async def chat(payload: ChatRequest, authorization: str | None = Header(default=None)):
-  
-    user = require_user(authorization)
-    # user["id"] is the student
-    ...
+async def chat(request: Request, payload: ChatRequest, authorization: str | None = Header(default=None)):
+    # 1) Require valid logged-in student
+    user = require_user(authorization)  # must return dict from Supabase /auth/v1/user
+    user_id = (user.get("id") or "").strip()
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user session")
 
-
-    text = str(data.get("message", "")).strip()
-    subject = str(data.get("subject", "General Study")).strip() or "General Study"
-    history = data.get("history", [])
-
+    # 2) Extract inputs
+    text = (payload.message or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="Message is required")
 
-    # Daily limit per client host (basic)
-    cid = client_id(request)
-    key = (cid, today_str())
-    if daily_usage[key] >= DAILY_LIMIT:
-        return {"reply": "You’ve reached today’s preview limit. Tuition plans unlock unlimited sessions."}
-    daily_usage[key] += 1
+    ctx = payload.context or {}
+    # subject precedence: explicit subject > ctx.subject > fallback
+    subject = (payload.subject or ctx.get("subject") or "General Study")
+    subject = str(subject).strip() or "General Study"
 
+    history = payload.history or []
+
+    # 3) Optional: daily limit (per user, not per host)
+    # If you want unlimited for paid plans later, flip this based on profile.plan from DB.
+    DAILY_LIMIT = int(os.getenv("DAILY_LIMIT", "200"))  # set to e.g. 30 for free preview
+    # You need a simple in-memory counter dict somewhere global:
+    # daily_usage: Dict[Tuple[str,str], int] = defaultdict(int)
+    key = (user_id, today_str())
+    try:
+        if daily_usage[key] >= DAILY_LIMIT:
+            return {"reply": "You’ve reached today’s preview limit. Tuition plans unlock unlimited sessions."}
+        daily_usage[key] += 1
+    except Exception:
+        # if daily_usage isn't defined, don't crash prod
+        pass
+
+    # 4) OpenAI client check
     c = openai_client()
     if not c:
         return {"reply": f"Demo mode (OPENAI_API_KEY missing). You asked: “{text}”"}
 
+    # 5) Build tutor prompt using subject + context
     subj = subject.lower()
-    focus = "You are a calm, professor-level academic tutor."
+    focus = "You are a calm, professor-level academic tutor. Explain step-by-step, ask clarifying questions if needed, and verify understanding."
+
     if any(k in subj for k in ["anatomy", "nursing", "medical", "musculoskeletal", "neuro"]):
-        focus = "You are a highly competent anatomy/nursing tutor. Be clinically correct and explain structure–function clearly."
+        focus = "You are a highly competent anatomy/nursing tutor. Be clinically correct. Explain structure–function clearly with simple analogies, then add exam-level detail."
 
-    messages = [{"role": "system", "content": f"You are Dr. Botonic. Subject: {subject}. {focus} Explain step-by-step."}]
+    # Context from dashboard (project/folder/plan)
+    project = str(ctx.get("project") or "").strip()
+    folder  = str(ctx.get("folder") or "").strip()
+    plan    = str(ctx.get("plan") or "").strip()
 
+    context_line = ""
+    if project or folder or plan:
+        context_line = f"Context: project={project or '—'}, folder={folder or '—'}, plan={plan or '—'}."
+
+    system_msg = (
+        f"You are Dr. Botonic. Subject: {subject}. {context_line} "
+        f"{focus} Keep answers crisp, structured, and actionable."
+    )
+
+    messages = [{"role": "system", "content": system_msg}]
+
+    # 6) Include history safely
     if isinstance(history, list):
         for t in history:
-            role = t.get("role")
-            content = t.get("content")
-            if role in ("user", "assistant") and isinstance(content, str):
-                messages.append({"role": role, "content": content})
+            role = getattr(t, "role", None) if not isinstance(t, dict) else t.get("role")
+            content = getattr(t, "content", None) if not isinstance(t, dict) else t.get("content")
+            if role in ("user", "assistant") and isinstance(content, str) and content.strip():
+                messages.append({"role": role, "content": content.strip()})
 
     messages.append({"role": "user", "content": text})
 
+    # 7) Call model
     try:
         resp = c.chat.completions.create(
             model=(os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip(),
             messages=messages,
-            max_tokens=450,
+            max_tokens=600 if (plan or "").upper() in ("PRO", "YEARLY_PRO") else 450,
             temperature=0.6,
         )
         reply = (resp.choices[0].message.content or "").strip()
         return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
 
 # ----------------------------
 # Stripe checkout
