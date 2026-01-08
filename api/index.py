@@ -292,13 +292,13 @@ async def dr_image():
 # Accepts:
 #   { "message": "...", "subject": "...", "history":[{role,content}] }
 # ----------------------------
-@app.post("/chat")
 @app.post("/api/chat")
-async def chat(request: Request):
-    try:
-        data = await request.json()
-    except Exception:
-        data = {}
+async def chat(payload: ChatRequest, authorization: str | None = Header(default=None)):
+  
+    user = require_user(authorization)
+    # user["id"] is the student
+    ...
+
 
     text = str(data.get("message", "")).strip()
     subject = str(data.get("subject", "General Study")).strip() or "General Study"
