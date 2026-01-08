@@ -8,6 +8,32 @@ from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 
+import os, requests
+from fastapi import Header, HTTPException
+
+SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").strip()
+SUPABASE_SERVICE_ROLE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+
+def require_user(authorization: str | None):
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise HTTPException(status_code=500, detail="Supabase server env not set")
+
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+
+    token = authorization.split(" ", 1)[1].strip()
+    r = requests.get(
+        f"{SUPABASE_URL}/auth/v1/user",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "apikey": SUPABASE_SERVICE_ROLE_KEY
+        },
+        timeout=10
+    )
+    if r.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid session token")
+    return r.json()
+
 # ---------- OpenAI (safe) ----------
 try:
     from openai import OpenAI  # type: ignore
