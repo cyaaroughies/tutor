@@ -27,7 +27,9 @@ async def health():
 # ---------- Chat ----------
 @app.post("/api/chat")
 async def chat(payload: ChatRequest):
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    api_key = os.getenv("OPENAI_API_KEY")
+print("DEBUG KEY FROM ENV:", api_key)
+api_key = (api_key or "").strip()
     if not api_key:
         raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY")
 

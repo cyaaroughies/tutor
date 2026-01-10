@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mr. Botonic Tutor</title>
   <link rel="stylesheet" href="/style.css" />
+<link rel="icon" type="image/png" href="/assets/botonic.png">
 </head>
 <body>
   <div class="wrap">
@@ -21,13 +22,13 @@
       </div>
       <div class="status" id="status">Offline</div>
     </header>
-
+<div class="composer">
+  <input id="input" type="text" placeholder="Ask me anything…" autocomplete="off" />
+  <button id="send" type="button">Send</button>
+</div>
     <main class="card">
       <div class="chat" id="chat"></div>
-      <div class="composer">
-        <input id="input" placeholder="Ask me anything…" />
-        <button id="send">Send</button>
-      </div>
+      
     </main>
   </div>
 
