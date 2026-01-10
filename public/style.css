@@ -1,7 +1,26 @@
-body { margin:0; font-family: system-ui,-apple-system,Segoe UI,sans-serif; background:#020617; color:#e5e7eb; }
-.wrap { max-width: 980px; margin: 0 auto; padding: 22px 16px 40px; }
-.grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
-.card { border:1px solid #1f2937; background:#020a0b; border-radius:14px; padding:14px; }
-.btn { margin-top:10px; width:100%; padding:10px 12px; border-radius:999px; border:none; background:#166534; color:#ecfdf5; cursor:pointer; font-weight:600; }
-.muted { color:#9ca3af; font-size:.9rem; }
-@media (max-width: 900px){ .grid{ grid-template-columns:1fr; } }
+:root{
+  --bg:#0f1f17;
+  --card:#13251c;
+  --text:#e6f2ec;
+  --line:rgba(230,242,236,.12);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui;
+}
+.wrap{max-width:900px;margin:auto;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;gap:12px;align-items:center}
+.avatar{width:46px;height:46px;border-radius:50%;overflow:hidden;border:1px solid var(--line)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.card{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.chat{height:60vh;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.bubble{padding:10px;border-radius:12px;max-width:80%}
+.user{align-self:flex-end;background:#1f3a2b}
+.assistant{align-self:flex-start;background:#111}
+.composer{display:flex;border-top:1px solid var(--line)}
+input{flex:1;padding:12px;background:#0003;border:none;color:white}
+button{padding:12px;border:none;background:#1f3a2b;color:white;cursor:pointer}
