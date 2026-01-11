@@ -4,10 +4,8 @@
   const send = document.getElementById("send");
   const status = document.getElementById("status");
 
-  if (!chat || !input || !send) {
-    console.error("Missing required DOM nodes", { chat, input, send });
-    return;
-  }
+  const API_HEALTH = "/api/health";
+  const API_CHAT = "/api/chat";
 
   const messages = [
     { role: "system", content: "You are Mr. Botonic, a helpful tutor. Keep answers clear and structured." }
@@ -23,12 +21,12 @@
 
   async function health() {
     try {
-    await fetch("/api/health")
-    await fetch("/api/chat", { ... })
-  
-    if (status) status.textContent = j.status === "ok" ? "Online" : "Offline";
-  } catch {
-    if (status) status.textContent = "Offline";
+      const r = await fetch(API_HEALTH, { cache: "no-store" });
+      const j = await r.json();
+      if (status) status.textContent = j.status === "ok" ? "Online" : "Offline";
+    } catch {
+      if (status) status.textContent = "Offline";
+    }
   }
 
   async function sendMsg() {
@@ -44,7 +42,7 @@
     send.disabled = true;
 
     try {
-      const r = await fetch("/api/chat", {
+      const r = await fetch(API_CHAT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages })
@@ -54,10 +52,7 @@
       let data;
       try { data = JSON.parse(raw); } catch { data = null; }
 
-      if (!r.ok) {
-        const detail = data?.detail || raw || "Request failed";
-        throw new Error(detail);
-      }
+      if (!r.ok) throw new Error(data?.detail || raw || "Request failed");
 
       const reply = data?.reply || "(no reply)";
       bubble("assistant", reply);
@@ -70,16 +65,10 @@
     }
   }
 
-  // Events
   send.addEventListener("click", sendMsg);
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMsg();
   });
-
-  // Make sure input is actually usable
-  input.disabled = false;
-  input.readOnly = false;
-  input.tabIndex = 0;
 
   health();
   bubble("assistant", "Hi — I’m Mr. Botonic. Ask me something.");
