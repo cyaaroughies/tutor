@@ -43,4 +43,5 @@ async def chat(req: ChatRequest):
         reply = resp.content[0].text if resp.content else ""
         return {"reply": reply}
     except anthropic.APIError as e:
-        raise HTTPException(status_code=500, detail=f"Anthropic API error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Anthropic API error: {str(e)"
+                            
