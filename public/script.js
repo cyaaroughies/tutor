@@ -23,12 +23,12 @@
 
   async function health() {
     try {
-      const r = await fetch("/api/health");
-      const j = await r.json();
-      if (status) status.textContent = j.status === "ok" ? "Online" : "Offline";
-    } catch {
-      if (status) status.textContent = "Offline";
-    }
+    await fetch("/api/health")
+    await fetch("/api/chat", { ... })
+  
+    if (status) status.textContent = j.status === "ok" ? "Online" : "Offline";
+  } catch {
+    if (status) status.textContent = "Offline";
   }
 
   async function sendMsg() {
