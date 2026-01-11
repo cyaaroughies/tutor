@@ -1,6 +1,8 @@
-def handler(request):
-    return {
-        "statusCode": 200,
-        "headers": {"content-type": "application/json"},
-        "body": '{"status":"ok"}'
-    }
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+async def health():
+    return {"status": "ok"}
