@@ -21,7 +21,7 @@
 
   async function health() {
     try {
-      const res = await fetch(/API_HEALTH, { cache: "no-store" });
+      const res = await fetch"(/API/HEALTH)", { cache: "no-store" });
       if (!res.ok) throw new Error(`Health HTTP ${res.status}`);
       const data = await res.json();
       if (status) status.textContent = data.status === "ok" ? "Online" : "Offline";
@@ -43,7 +43,7 @@
     send.disabled = true;
 
     try {
-      const res = await fetch(/API_CHAT, {
+      const res = await fetch"(/API/CHAT)", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages })
