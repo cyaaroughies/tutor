@@ -1,38 +1,46 @@
 import os
-from typing import List, Literal, Optional
+from typing import List, Literal
 
+import anthropic
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from openai import OpenAI
 
 app = FastAPI()
 
-class ChatMessage(BaseModel):
+class Message(BaseModel):
     role: Literal["system", "user", "assistant"]
     content: str
 
 class ChatRequest(BaseModel):
-    messages: List[ChatMessage]
-    model: Optional[str] = None
+    messages: List[Message]
+
+def get_client() -> anthropic.Anthropic:
+    key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
+    if not key:
+        raise HTTPException(status_code=500, detail="Missing ANTHROPIC_API_KEY")
+    return anthropic.Anthropic(api_key=key)
 
 @app.post("/")
-async def chat(payload: ChatRequest):
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not api_key:
-        raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY")
+async def chat(req: ChatRequest):
+    client = get_client()
 
-    model = (payload.model or os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip()
+    system_message = "You are Mr. Botonic, a helpful tutor. Keep answers clear and structured."
 
-    if not payload.messages:
-        raise HTTPException(status_code=400, detail="No messages provided")
+    msgs = []
+    for m in req.messages:
+        if m.role == "system":
+            continue
+        role = m.role if m.role in ("user", "assistant") else "user"
+        msgs.append({"role": role, "content": m.content})
 
-    client = OpenAI(api_key=api_key)
-
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[m.model_dump() for m in payload.messages],
-        temperature=0.6
-    )
-
-    reply = resp.choices[0].message.content or ""
-    return {"reply": reply, "model": model}
+    try:
+        resp = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            system=system_message,
+            messages=msgs
+        )
+        reply = resp.content[0].text if resp.content else ""
+        return {"reply": reply}
+    except anthropic.APIError as e:
+        raise HTTPException(status_code=500, detail=f"Anthropic API error: {str(e)}")
